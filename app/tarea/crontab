@@ -1,0 +1,2 @@
+# Tarea programada [cron]: dispara el barrido cada 5 min (táctica "Barrido idempotente", E-4)
+*/5 * * * * root . /etc/entorno-tarea.sh; cd /app && /usr/local/bin/python manage.py barrido >> /proc/1/fd/1 2>> /proc/1/fd/2

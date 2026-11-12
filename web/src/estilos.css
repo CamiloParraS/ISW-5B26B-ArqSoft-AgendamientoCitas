@@ -1,0 +1,86 @@
+:root {
+  --fondo: #f5f7fa;
+  --superficie: #ffffff;
+  --texto: #1f2933;
+  --tenue: #616e7c;
+  --borde: #d9e2ec;
+  --primario: #0b6e79;
+  --primario-claro: #e0f4f6;
+  --peligro: #b42318;
+  --peligro-claro: #fdecea;
+  --exito: #1a7f37;
+  --exito-claro: #e6f4ea;
+  --info-claro: #eef2f7;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.contenedor { max-width: 1120px; margin: 0 auto; padding: 20px 16px; }
+
+.barra { background: var(--superficie); border-bottom: 1px solid var(--borde); }
+.barra-interior { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
+.usuario { display: flex; align-items: center; gap: 12px; color: var(--tenue); }
+
+h1 { font-size: 24px; margin: 0 0 16px; }
+h2 { font-size: 17px; margin: 0 0 12px; }
+h3 { font-size: 14px; margin: 16px 0 8px; text-transform: capitalize; color: var(--tenue); }
+
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.columna { display: grid; gap: 16px; }
+.tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: 10px; padding: 18px; min-width: 0; }
+.ingreso { max-width: 440px; display: grid; gap: 16px; }
+
+label { display: grid; gap: 4px; font-size: 13px; color: var(--tenue); margin-bottom: 10px; }
+input, select, textarea {
+  font: inherit; color: var(--texto); background: var(--superficie);
+  border: 1px solid var(--borde); border-radius: 6px; padding: 8px 10px; width: 100%;
+}
+textarea { min-height: 70px; resize: vertical; }
+.acciones select, .acciones input { width: auto; flex: 1 1 160px; }
+
+button {
+  font: inherit; border: 1px solid var(--primario); background: var(--primario); color: #fff;
+  border-radius: 6px; padding: 7px 14px; cursor: pointer;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.secundario { background: var(--superficie); color: var(--primario); }
+button.peligro { background: var(--superficie); color: var(--peligro); border-color: var(--peligro); }
+button.enlace { background: none; border: none; color: var(--primario); padding: 0; text-decoration: underline; }
+
+.acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+.formulario { display: grid; }
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.lista { list-style: none; padding: 0; margin: 0; }
+.fila { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borde); flex-wrap: wrap; }
+.fila .acciones { margin: 0; }
+.registro { padding: 10px 0; border-bottom: 1px solid var(--borde); }
+.tenue { color: var(--tenue); font-size: 13px; }
+
+.dia h3 { margin-top: 14px; }
+.cupos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.cupo { background: var(--superficie); color: var(--primario); padding: 5px 10px; font-variant-numeric: tabular-nums; }
+.cupo.activo { background: var(--primario); color: #fff; }
+
+.aviso { border-radius: 6px; padding: 9px 12px; margin: 8px 0 12px; }
+.aviso.error { background: var(--peligro-claro); color: var(--peligro); }
+.aviso.exito { background: var(--exito-claro); color: var(--exito); }
+.aviso.info { background: var(--info-claro); color: var(--texto); }
+
+.estado { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--info-claro); }
+.estado-confirmada, .estado-enviado { background: var(--primario-claro); color: var(--primario); }
+.estado-atendida { background: var(--exito-claro); color: var(--exito); }
+.estado-inasistencia, .estado-cancelada { background: var(--peligro-claro); color: var(--peligro); }
+.estado-pendiente { background: #fff4e5; color: #9a5b00; }
+
+.tabla { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borde); white-space: nowrap; }

@@ -1,0 +1,94 @@
+# Esqueleto caminante · Agenda de citas médicas
+# Un solo comando:  docker compose up --build
+#
+# Cada servicio corresponde a una caja del diagrama C4 Nivel 2 (docs/diagramas/c4-nivel-2-contenedores.jpg):
+#   aplicacion-web        -> Aplicación web          [Contenedor: React]
+#   aplicacion-agenda     -> Aplicación de agenda    [Contenedor: Python / Django]  (monolito modular, UN proceso)
+#   tarea-programada      -> Tarea programada        [Contenedor: cron]  dispara el barrido cada 5 min
+#   base-de-datos         -> Base de datos           [Contenedor: PostgreSQL]  (conexión SQL/TLS)
+#   proveedor-correo-sms  -> Proveedor de correo/SMS [Sistema externo]  SIMULADO, fuera de la frontera del sistema
+
+name: agenda-citas
+
+x-entorno-agenda: &entorno-agenda
+  POSTGRES_HOST: base-de-datos
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: agenda_citas
+  POSTGRES_USER: agenda
+  POSTGRES_PASSWORD: agenda-solo-desarrollo
+  POSTGRES_SSLMODE: require
+  DJANGO_SECRET_KEY: solo-para-desarrollo-cambiar-en-produccion
+  DJANGO_ALLOWED_HOSTS: "*"
+  # Clave Fernet para cifrar en reposo diagnóstico y receta (táctica "Cifrar", E-2). Cambiarla en producción.
+  CLAVE_CIFRADO_CLINICO: 9xv36gRm8dJ9TOj3TgOgNplQw5g2lBLtdI7TYEdftuE=
+  PROVEEDOR_MENSAJERIA_URL: http://proveedor-correo-sms:9000
+  NOTIFICACIONES_CANAL: correo
+
+services:
+  base-de-datos:
+    build: ./db
+    environment:
+      POSTGRES_DB: agenda_citas
+      POSTGRES_USER: agenda
+      POSTGRES_PASSWORD: agenda-solo-desarrollo
+    volumes:
+      - datos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agenda -d agenda_citas"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: always
+
+  aplicacion-agenda:
+    build:
+      context: ./app
+      target: aplicacion
+    environment:
+      <<: *entorno-agenda
+    depends_on:
+      base-de-datos:
+        condition: service_healthy
+    # Latido y reinicio (E-3): la plataforma consulta /salud; tras 3 fallos seguidos termina el proceso
+    # y la política "restart: always" lo vuelve a levantar. init: true deja a gunicorn fuera del PID 1
+    # (el kernel no deja matar al PID 1 desde dentro de su propio contenedor).
+    init: true
+    healthcheck:
+      test: ["CMD", "python", "salud.py"]
+      interval: 10s
+      timeout: 12s
+      retries: 3
+      start_period: 60s
+    restart: always
+
+  tarea-programada:
+    build:
+      context: ./app
+      target: tarea
+    environment:
+      <<: *entorno-agenda
+      # El barrido envía los pendientes de forma síncrona; no hace falta el envío inmediato en segundo plano.
+      NOTIFICACIONES_ENVIO_INMEDIATO: "0"
+    depends_on:
+      aplicacion-agenda:
+        condition: service_healthy
+    restart: always
+
+  aplicacion-web:
+    build: ./web
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - aplicacion-agenda
+    restart: always
+
+  # Sistema externo simulado: recibe los mensajes por HTTP y los muestra en http://localhost:8025
+  proveedor-correo-sms:
+    build: ./proveedor-simulado
+    ports:
+      - "8025:9000"
+    restart: always
+
+volumes:
+  datos-postgres:
