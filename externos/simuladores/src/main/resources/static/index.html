@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simuladores externos de MediCita</title>
+<style>
+  :root { --fondo:#f5f7fa; --tarjeta:#fff; --texto:#1c2733; --suave:#5b6b7b; --borde:#d9e0e7; --ok:#1b7f4b; --mal:#b3261e; --acento:#0b5cad; }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo:#12181f; --tarjeta:#1b242e; --texto:#e6ebf0; --suave:#97a6b5; --borde:#2d3a47; --ok:#5fd493; --mal:#ff8a80; --acento:#7ab8ff; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:16px; font:0.95rem/1.5 system-ui, sans-serif; background:var(--fondo); color:var(--texto); }
+  h1 { font-size:1.75rem; margin:0 0 4px; }
+  p.sub { margin:0 0 16px; color:var(--suave); }
+  .estado { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .etiqueta { padding:4px 10px; border-radius:999px; border:1px solid var(--borde); background:var(--tarjeta); }
+  .ok { color:var(--ok); } .mal { color:var(--mal); font-weight:600; }
+  section { background:var(--tarjeta); border:1px solid var(--borde); border-radius:10px; padding:12px; margin-bottom:16px; overflow-x:auto; }
+  h2 { font-size:1.25rem; margin:0 0 8px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--borde); vertical-align:top; white-space:nowrap; }
+  td.largo { white-space:normal; word-break:break-word; }
+  th { color:var(--suave); font-weight:600; }
+  .vacio { color:var(--suave); font-style:italic; }
+  button { font:inherit; padding:4px 10px; border-radius:6px; border:1px solid var(--borde); background:var(--tarjeta); color:var(--texto); cursor:pointer; }
+  button:hover { border-color:var(--acento); }
+</style>
+</head>
+<body>
+<h1>Simuladores externos de MediCita</h1>
+<p class="sub">WhatsApp Business, pasarela SMS e historia clínica (FHIR R4). Se actualiza cada 3 segundos.</p>
+
+<div class="estado" id="estado"></div>
+
+<section>
+  <h2>WhatsApp Business (Cloud API)</h2>
+  <div id="whatsapp"></div>
+</section>
+<section>
+  <h2>Pasarela SMS</h2>
+  <div id="sms"></div>
+</section>
+<section>
+  <h2>Historia clínica electrónica (HCE · FHIR R4)</h2>
+  <div id="hce"></div>
+</section>
+
+<script>
+const COLUMNAS = {
+  whatsapp: [['ocurridoEn','Hora'],['correlacionId','Correlación'],['para','Para'],['plantilla','Plantilla'],['parametros','Parámetros'],['resultado','Resultado'],['codigoError','Código error']],
+  sms: [['ocurridoEn','Hora'],['correlacionId','Correlación'],['para','Para'],['texto','Texto'],['resultado','Resultado'],['id','Id']],
+  hce: [['ocurridoEn','Hora'],['correlacionId','Correlación'],['metodo','Método'],['ruta','Ruta'],['estado','HTTP'],['recurso','Recurso']]
+};
+
+function celda(valor) {
+  const td = document.createElement('td');
+  td.textContent = valor == null ? '' : (Array.isArray(valor) ? valor.join(' | ') : String(valor));
+  if (td.textContent.length > 40) td.className = 'largo';
+  return td;
+}
+
+function pintar(id, filas) {
+  const cont = document.getElementById(id);
+  cont.replaceChildren();
+  if (!filas.length) {
+    const p = document.createElement('div');
+    p.className = 'vacio';
+    p.textContent = 'Sin llamadas todavía.';
+    cont.appendChild(p);
+    return;
+  }
+  const tabla = document.createElement('table');
+  const cab = document.createElement('tr');
+  COLUMNAS[id].forEach(([, titulo]) => { const th = document.createElement('th'); th.textContent = titulo; cab.appendChild(th); });
+  tabla.appendChild(cab);
+  filas.slice().reverse().slice(0, 50).forEach(f => {
+    const tr = document.createElement('tr');
+    COLUMNAS[id].forEach(([clave]) => tr.appendChild(celda(f[clave])));
+    tabla.appendChild(tr);
+  });
+  cont.appendChild(tabla);
+}
+
+function etiqueta(texto, clase) {
+  const s = document.createElement('span');
+  s.className = 'etiqueta ' + (clase || '');
+  s.textContent = texto;
+  return s;
+}
+
+function boton(texto, url, cuerpo) {
+  const b = document.createElement('button');
+  b.textContent = texto;
+  b.onclick = async () => {
+    await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+    actualizar();
+  };
+  return b;
+}
+
+function pintarEstado(e) {
+  const cont = document.getElementById('estado');
+  cont.replaceChildren();
+  cont.appendChild(etiqueta('HCE: ' + (e.hceCaida ? 'CAÍDA' : 'disponible'), e.hceCaida ? 'mal' : 'ok'));
+  cont.appendChild(boton(e.hceCaida ? 'Restaurar HCE' : 'Caer HCE', 'control/hce', { caida: !e.hceCaida }));
+  cont.appendChild(etiqueta('SMS: ' + (e.smsCaida ? 'CAÍDA' : 'disponible'), e.smsCaida ? 'mal' : 'ok'));
+  cont.appendChild(boton(e.smsCaida ? 'Restaurar SMS' : 'Caer SMS', 'control/sms', { caida: !e.smsCaida }));
+  const rech = e.plantillasRechazadas.length ? e.plantillasRechazadas.join(', ') : 'ninguna';
+  cont.appendChild(etiqueta('Plantillas rechazadas: ' + rech, e.plantillasRechazadas.length ? 'mal' : 'ok'));
+  const r = e.recursosHce;
+  cont.appendChild(etiqueta('Recursos HCE: ' + r.Patient + ' Patient, ' + r.Appointment + ' Appointment, ' + r.Encounter + ' Encounter'));
+}
+
+async function actualizar() {
+  try {
+    const [e, w, s, h] = await Promise.all(['control/estado', 'registro/whatsapp', 'registro/sms', 'registro/hce']
+      .map(u => fetch(u).then(r => r.json())));
+    pintarEstado(e);
+    pintar('whatsapp', w);
+    pintar('sms', s);
+    pintar('hce', h);
+  } catch (err) { /* reintenta en el próximo ciclo */ }
+}
+
+actualizar();
+setInterval(actualizar, 3000);
+</script>
+</body>
+</html>

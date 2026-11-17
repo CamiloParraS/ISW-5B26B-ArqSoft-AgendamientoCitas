@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: integracion-clinica
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:medicita}
+    password: ${SPRING_RABBITMQ_PASSWORD:medicita}
+    virtual-host: /
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: true
+        missing-queues-fatal: false
+        prefetch: 10
+        concurrency: 1
+        max-concurrency: 1
+
+server:
+  port: 8080
+  shutdown: graceful
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+medicita:
+  hce:
+    fhir-url: ${MEDICITA_HCE_FHIR_URL:http://localhost:8090/fhir}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 5000
+  mensajeria:
+    max-intentos-validacion: 5
+    ttl-reintento-ms: 30000
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      hce:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 2
+        automaticTransitionFromOpenToHalfOpenEnabled: false
+        recordFailurePredicate: co.edu.ucc.medicita.integracionclinica.hce.FalloDeDisponibilidad
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState
+      status:
+        http-mapping:
+          CIRCUIT_OPEN: 200
+  health:
+    circuitbreakers:
+      enabled: true

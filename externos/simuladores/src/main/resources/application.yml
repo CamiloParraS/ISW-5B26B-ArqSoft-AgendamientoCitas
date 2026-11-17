@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: simuladores
+
+server:
+  port: 8090
+  shutdown: graceful
+  tomcat:
+    relaxed-query-chars: "|"
+
+logging:
+  structured:
+    format:
+      console: ecs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
