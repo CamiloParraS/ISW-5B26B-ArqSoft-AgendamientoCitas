@@ -1,0 +1,6 @@
+# Scripts y configuraciones se ejecutan en contenedores Linux: siempre LF
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.woff2 binary
+*.jar binary
