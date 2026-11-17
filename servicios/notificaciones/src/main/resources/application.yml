@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: notificaciones
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/notificaciones}
+    username: ${SPRING_DATASOURCE_USERNAME:notificaciones}
+    password: ${SPRING_DATASOURCE_PASSWORD:notificaciones}
+  flyway:
+    schemas: notificaciones
+    default-schema: notificaciones
+    create-schemas: true
+  rabbitmq:
+    addresses: ${SPRING_RABBITMQ_ADDRESSES:localhost:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:medicita}
+    password: ${SPRING_RABBITMQ_PASSWORD:medicita}
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        acknowledge-mode: manual
+        default-requeue-rejected: false
+        missing-queues-fatal: false
+        prefetch: 10
+        concurrency: 2
+        max-concurrency: 4
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail.smtp.connectiontimeout: 2000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  shutdown: graceful
+
+logging:
+  structured:
+    format:
+      console: ecs
+  level:
+    co.edu.ucc.medicita: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        # La disponibilidad se mide sólo contra la BD: RabbitMQ o correo caídos no sacan al servicio del balanceo
+        readiness:
+          include: readinessState,db
+  health:
+    mail:
+      enabled: false
+
+medicita:
+  notificaciones:
+    zona: America/Bogota
+    respaldo: WHATSAPP,SMS,CORREO
+    max-intentos: 5
+    recordatorios:
+      cron: "0 0 18 * * *"
+    canales:
+      whatsapp:
+        habilitado: true
+        contacto: telefono
+        url: ${MEDICITA_WHATSAPP_URL:http://localhost:8090/whatsapp}
+        phone-id: ${MEDICITA_WHATSAPP_PHONE_ID:100200300}
+        token: ${MEDICITA_WHATSAPP_TOKEN:token-demo}
+        idioma: es_CO
+        # Sólo plantillas aprobadas por Meta; parámetros del cuerpo: médico, fecha, hora, sede
+        plantillas:
+          CONFIRMACION: cita_confirmada
+          CANCELACION: cita_cancelada
+          RECORDATORIO: recordatorio_cita
+      sms:
+        habilitado: true
+        contacto: telefono
+        url: ${MEDICITA_SMS_URL:http://localhost:8090/sms}
+        plantillas:
+          CONFIRMACION: "MediCita: su cita con {medico} quedó confirmada para el {fecha}, {hora}, en {sede}."
+          CANCELACION: "MediCita: su cita con {medico} del {fecha}, {hora}, en {sede} fue cancelada."
+          RECORDATORIO: "MediCita: le recordamos su cita con {medico} el {fecha}, {hora}, en {sede}."
+      correo:
+        habilitado: true
+        contacto: email
+        remitente: notificaciones@medicita.test
+        plantillas:
+          CONFIRMACION:
+            asunto: "Cita confirmada con {medico}"
+            texto: "Hola {nombre}, su cita con {medico} quedó confirmada para el {fecha}, {hora}, en {sede}."
+          CANCELACION:
+            asunto: "Cita cancelada con {medico}"
+            texto: "Hola {nombre}, su cita con {medico} del {fecha}, {hora}, en {sede} fue cancelada."
+          RECORDATORIO:
+            asunto: "Recordatorio de su cita con {medico}"
+            texto: "Hola {nombre}, le recordamos su cita con {medico} el {fecha}, {hora}, en {sede}."
