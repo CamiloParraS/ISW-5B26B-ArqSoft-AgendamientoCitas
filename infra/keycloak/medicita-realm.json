@@ -1,0 +1,2048 @@
+{
+  "realm": "medicita",
+  "displayName": "MediCita",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": true,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "ssoSessionIdleTimeout": 900,
+  "accessTokenLifespan": 300,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "es",
+    "en"
+  ],
+  "defaultLocale": "es",
+  "roles": {
+    "realm": [
+      {
+        "name": "paciente",
+        "description": "Rol paciente de MediCita"
+      },
+      {
+        "name": "medico",
+        "description": "Rol medico de MediCita"
+      },
+      {
+        "name": "administrativo_ips",
+        "description": "Rol administrativo_ips de MediCita"
+      },
+      {
+        "name": "coordinador",
+        "description": "Rol coordinador de MediCita"
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "basic",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "auth_time",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usersessionmodel-note-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.session.note": "AUTH_TIME",
+            "claim.name": "auth_time",
+            "jsonType.label": "long",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "roles",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "audience resolve",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-resolve-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "username",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "full name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-full-name-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "given name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "firstName",
+            "claim.name": "given_name",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "family name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "lastName",
+            "claim.name": "family_name",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "claim.name": "email",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "email verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "emailVerified",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "web-origins",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "allowed web origins",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-allowed-origins-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "acr",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "acr loa level",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-acr-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "offline_access",
+      "description": "",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    },
+    {
+      "name": "medicita",
+      "description": "Atributos de MediCita (documento, telefono, institucion)",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "documento",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "documento",
+            "claim.name": "documento",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "telefono",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "telefono",
+            "claim.name": "telefono",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        },
+        {
+          "name": "institucion",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "institucion",
+            "claim.name": "institucion",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true",
+            "multivalued": "false",
+            "aggregate.attrs": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "app-paciente",
+      "name": "App web del paciente",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "https://localhost/*",
+        "https://localhost:8443/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "basic",
+        "medicita"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ]
+    },
+    {
+      "clientId": "portal",
+      "name": "Portal clinico-administrativo",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "https://localhost/portal/*",
+        "https://localhost:8443/portal/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "basic",
+        "medicita"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ]
+    },
+    {
+      "clientId": "escenarios",
+      "name": "Escenarios de calidad (scripts)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "https://localhost/*",
+        "https://localhost:8443/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "+"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "basic",
+        "medicita"
+      ],
+      "optionalClientScopes": [
+        "offline_access"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "a0000000-0000-4000-8000-000000000001",
+      "username": "ana",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Ana",
+      "lastName": "Gómez",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "ana@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085000001"
+        ],
+        "telefono": [
+          "+573001110001"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000002",
+      "username": "luis",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Luis",
+      "lastName": "Pérez",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "luis@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085000002"
+        ],
+        "telefono": [
+          "+573001110002"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000101",
+      "username": "carga01",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 01",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga01@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900001"
+        ],
+        "telefono": [
+          "+573002220001"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000102",
+      "username": "carga02",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 02",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga02@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900002"
+        ],
+        "telefono": [
+          "+573002220002"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000103",
+      "username": "carga03",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 03",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga03@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900003"
+        ],
+        "telefono": [
+          "+573002220003"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000104",
+      "username": "carga04",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 04",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga04@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900004"
+        ],
+        "telefono": [
+          "+573002220004"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000105",
+      "username": "carga05",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 05",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga05@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900005"
+        ],
+        "telefono": [
+          "+573002220005"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000106",
+      "username": "carga06",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 06",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga06@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900006"
+        ],
+        "telefono": [
+          "+573002220006"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000107",
+      "username": "carga07",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 07",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga07@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900007"
+        ],
+        "telefono": [
+          "+573002220007"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000108",
+      "username": "carga08",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 08",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga08@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900008"
+        ],
+        "telefono": [
+          "+573002220008"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000109",
+      "username": "carga09",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 09",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga09@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900009"
+        ],
+        "telefono": [
+          "+573002220009"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000110",
+      "username": "carga10",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 10",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga10@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900010"
+        ],
+        "telefono": [
+          "+573002220010"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000111",
+      "username": "carga11",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 11",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga11@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900011"
+        ],
+        "telefono": [
+          "+573002220011"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000112",
+      "username": "carga12",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 12",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga12@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900012"
+        ],
+        "telefono": [
+          "+573002220012"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000113",
+      "username": "carga13",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 13",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga13@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900013"
+        ],
+        "telefono": [
+          "+573002220013"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000114",
+      "username": "carga14",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 14",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga14@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900014"
+        ],
+        "telefono": [
+          "+573002220014"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000115",
+      "username": "carga15",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 15",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga15@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900015"
+        ],
+        "telefono": [
+          "+573002220015"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000116",
+      "username": "carga16",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 16",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga16@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900016"
+        ],
+        "telefono": [
+          "+573002220016"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000117",
+      "username": "carga17",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 17",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga17@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900017"
+        ],
+        "telefono": [
+          "+573002220017"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000118",
+      "username": "carga18",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 18",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga18@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900018"
+        ],
+        "telefono": [
+          "+573002220018"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000119",
+      "username": "carga19",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 19",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga19@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900019"
+        ],
+        "telefono": [
+          "+573002220019"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000120",
+      "username": "carga20",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 20",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga20@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900020"
+        ],
+        "telefono": [
+          "+573002220020"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000121",
+      "username": "carga21",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 21",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga21@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900021"
+        ],
+        "telefono": [
+          "+573002220021"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000122",
+      "username": "carga22",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 22",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga22@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900022"
+        ],
+        "telefono": [
+          "+573002220022"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000123",
+      "username": "carga23",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 23",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga23@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900023"
+        ],
+        "telefono": [
+          "+573002220023"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000124",
+      "username": "carga24",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 24",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga24@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900024"
+        ],
+        "telefono": [
+          "+573002220024"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000125",
+      "username": "carga25",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 25",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga25@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900025"
+        ],
+        "telefono": [
+          "+573002220025"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000126",
+      "username": "carga26",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 26",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga26@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900026"
+        ],
+        "telefono": [
+          "+573002220026"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000127",
+      "username": "carga27",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 27",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga27@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900027"
+        ],
+        "telefono": [
+          "+573002220027"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000128",
+      "username": "carga28",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 28",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga28@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900028"
+        ],
+        "telefono": [
+          "+573002220028"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000129",
+      "username": "carga29",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 29",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga29@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900029"
+        ],
+        "telefono": [
+          "+573002220029"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000130",
+      "username": "carga30",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 30",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga30@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900030"
+        ],
+        "telefono": [
+          "+573002220030"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000131",
+      "username": "carga31",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 31",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga31@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900031"
+        ],
+        "telefono": [
+          "+573002220031"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000132",
+      "username": "carga32",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 32",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga32@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900032"
+        ],
+        "telefono": [
+          "+573002220032"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000133",
+      "username": "carga33",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 33",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga33@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900033"
+        ],
+        "telefono": [
+          "+573002220033"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000134",
+      "username": "carga34",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 34",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga34@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900034"
+        ],
+        "telefono": [
+          "+573002220034"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000135",
+      "username": "carga35",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 35",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga35@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900035"
+        ],
+        "telefono": [
+          "+573002220035"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000136",
+      "username": "carga36",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 36",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga36@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900036"
+        ],
+        "telefono": [
+          "+573002220036"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000137",
+      "username": "carga37",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 37",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga37@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900037"
+        ],
+        "telefono": [
+          "+573002220037"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000138",
+      "username": "carga38",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 38",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga38@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900038"
+        ],
+        "telefono": [
+          "+573002220038"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000139",
+      "username": "carga39",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 39",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga39@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900039"
+        ],
+        "telefono": [
+          "+573002220039"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000140",
+      "username": "carga40",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 40",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga40@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900040"
+        ],
+        "telefono": [
+          "+573002220040"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000141",
+      "username": "carga41",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 41",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga41@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900041"
+        ],
+        "telefono": [
+          "+573002220041"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000142",
+      "username": "carga42",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 42",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga42@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900042"
+        ],
+        "telefono": [
+          "+573002220042"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000143",
+      "username": "carga43",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 43",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga43@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900043"
+        ],
+        "telefono": [
+          "+573002220043"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000144",
+      "username": "carga44",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 44",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga44@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900044"
+        ],
+        "telefono": [
+          "+573002220044"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000145",
+      "username": "carga45",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 45",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga45@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900045"
+        ],
+        "telefono": [
+          "+573002220045"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000146",
+      "username": "carga46",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 46",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga46@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900046"
+        ],
+        "telefono": [
+          "+573002220046"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000147",
+      "username": "carga47",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 47",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga47@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900047"
+        ],
+        "telefono": [
+          "+573002220047"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000148",
+      "username": "carga48",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 48",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga48@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900048"
+        ],
+        "telefono": [
+          "+573002220048"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000149",
+      "username": "carga49",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 49",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga49@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900049"
+        ],
+        "telefono": [
+          "+573002220049"
+        ]
+      }
+    },
+    {
+      "id": "a0000000-0000-4000-8000-000000000150",
+      "username": "carga50",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Paciente",
+      "lastName": "Carga 50",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "paciente"
+      ],
+      "requiredActions": [],
+      "email": "carga50@medicita.test",
+      "attributes": {
+        "documento": [
+          "1085900050"
+        ],
+        "telefono": [
+          "+573002220050"
+        ]
+      }
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "username": "dra.rosero",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Carolina",
+      "lastName": "Rosero",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "medico"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000002",
+      "username": "dr.burbano",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Andrés",
+      "lastName": "Burbano",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "medico"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "b0000000-0000-4000-8000-000000000003",
+      "username": "dr.ortiz",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Jorge",
+      "lastName": "Ortiz",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "medico"
+      ],
+      "requiredActions": []
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000001",
+      "username": "admin.norte",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Marta",
+      "lastName": "Delgado",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "administrativo_ips"
+      ],
+      "requiredActions": [],
+      "attributes": {
+        "institucion": [
+          "IPS-NORTE"
+        ]
+      }
+    },
+    {
+      "id": "d0000000-0000-4000-8000-000000000002",
+      "username": "admin.sur",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Pedro",
+      "lastName": "Insuasty",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "administrativo_ips"
+      ],
+      "requiredActions": [],
+      "attributes": {
+        "institucion": [
+          "IPS-SUR"
+        ]
+      }
+    },
+    {
+      "id": "e0000000-0000-4000-8000-000000000001",
+      "username": "coordinacion",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Coordinación",
+      "lastName": "de agendas",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "medicita",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "coordinador"
+      ],
+      "requiredActions": []
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\": [{\"name\": \"username\", \"displayName\": \"${username}\", \"validations\": {\"length\": {\"min\": 3, \"max\": 255}, \"username-prohibited-characters\": {}, \"up-username-not-idn-homograph\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"email\", \"displayName\": \"${email}\", \"validations\": {\"email\": {}, \"length\": {\"max\": 255}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"firstName\", \"displayName\": \"${firstName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"lastName\", \"displayName\": \"${lastName}\", \"validations\": {\"length\": {\"max\": 255}, \"person-name-prohibited-characters\": {}}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\", \"user\"]}}, {\"name\": \"documento\", \"displayName\": \"Documento\", \"validations\": {}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}, {\"name\": \"telefono\", \"displayName\": \"Teléfono\", \"validations\": {}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}, {\"name\": \"institucion\", \"displayName\": \"Institución\", \"validations\": {}, \"permissions\": {\"view\": [\"admin\", \"user\"], \"edit\": [\"admin\"]}}], \"unmanagedAttributePolicy\": \"ENABLED\"}"
+          ]
+        }
+      }
+    ]
+  }
+}

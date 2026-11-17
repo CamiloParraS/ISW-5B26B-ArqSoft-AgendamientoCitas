@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medicita.ucc.edu.co/contratos/eventos/cita-cancelada.v1.json",
+  "title": "CitaCancelada",
+  "description": "Una cita fue cancelada (por el paciente o por reprogramación). Routing key `cita.cancelada.v1` en el exchange `medicita.citas`. Sin datos personales del paciente: solo identificadores.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventoId",
+    "tipo",
+    "version",
+    "ocurridoEn",
+    "correlacionId",
+    "datos"
+  ],
+  "properties": {
+    "eventoId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento; clave de idempotencia de los consumidores (= message_id AMQP)."
+    },
+    "tipo": {
+      "const": "CitaCancelada"
+    },
+    "version": {
+      "const": 1
+    },
+    "ocurridoEn": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 con desfase, p. ej. 2026-11-18T07:00:00-05:00"
+    },
+    "correlacionId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Valor de X-Correlation-Id de la petición que originó el evento."
+    },
+    "datos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citaId",
+        "pacienteId",
+        "medicoId",
+        "medicoNombre",
+        "sedeNombre",
+        "inicio",
+        "conPenalidad",
+        "motivo"
+      ],
+      "properties": {
+        "citaId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "pacienteId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "medicoId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "medicoNombre": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sedeNombre": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inicio": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 con desfase, p. ej. 2026-11-18T07:00:00-05:00"
+        },
+        "conPenalidad": {
+          "type": "boolean",
+          "description": "true si se canceló dentro de las horas mínimas de la sede."
+        },
+        "motivo": {
+          "enum": [
+            "PACIENTE",
+            "REPROGRAMACION"
+          ]
+        }
+      }
+    }
+  }
+}

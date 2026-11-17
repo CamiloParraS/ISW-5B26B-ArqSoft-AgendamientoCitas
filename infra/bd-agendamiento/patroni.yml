@@ -1,0 +1,70 @@
+# Configuración base de Patroni. PATRONI_NAME, PATRONI_RESTAPI_CONNECT_ADDRESS y
+# PATRONI_POSTGRESQL_CONNECT_ADDRESS se inyectan por variables de entorno (ver entrypoint.sh).
+scope: medicita
+namespace: /medicita/
+name: nodo
+
+etcd3:
+  host: etcd:2379
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: nodo:8008
+
+bootstrap:
+  dcs:
+    ttl: 20
+    loop_wait: 5
+    retry_timeout: 5
+    maximum_lag_on_failover: 1048576
+    synchronous_mode: true          # réplica síncrona: 0 citas confirmadas perdidas
+    synchronous_mode_strict: false  # si la réplica cae, la primaria sigue escribiendo
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_log_hints: "on"
+        max_wal_senders: 10
+        max_replication_slots: 10
+        max_connections: 200
+        timezone: America/Bogota
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - local all all trust
+    - host all all 127.0.0.1/32 scram-sha-256
+    - host replication replicator 10.0.0.0/8 scram-sha-256
+    - host replication replicator 172.16.0.0/12 scram-sha-256
+    - host replication replicator 192.168.0.0/16 scram-sha-256
+    - host all all 10.0.0.0/8 scram-sha-256
+    - host all all 172.16.0.0/12 scram-sha-256
+    - host all all 192.168.0.0/16 scram-sha-256
+  post_bootstrap: /post_bootstrap.sh
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: nodo:5432
+  data_dir: /var/lib/postgresql/data/pgdata
+  bin_dir: /usr/lib/postgresql/16/bin
+  authentication:
+    superuser:
+      username: postgres
+      password: postgres
+    replication:
+      username: replicator
+      password: replicator
+    rewind:
+      username: postgres
+      password: postgres
+  pgpass: /tmp/pgpass
+  parameters:
+    unix_socket_directories: /var/run/postgresql
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

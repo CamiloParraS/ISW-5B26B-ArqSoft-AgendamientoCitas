@@ -1,0 +1,364 @@
+# MediCita - walking skeleton. Un contenedor C4 nivel 2 = un servicio de compose.
+# Arranque: docker compose up -d --build
+#
+# Puerto HTTPS publicado: MEDICITA_HTTPS_PORT (por defecto 443). Si 443 esta ocupado:
+#     MEDICITA_HTTPS_PORT=8443 docker compose up -d --build
+# La URL publica (MEDICITA_PUBLIC_URL) se deriva de ese puerto y alimenta a la vez
+# KC_HOSTNAME (Keycloak), MEDICITA_JWT_ISSUER (API) y el redirect 80 -> https del gateway,
+# de modo que el emisor (iss) del token y el que valida la API siempre coinciden:
+#     sin puerto  -> https://localhost            (iss = https://localhost/auth/realms/medicita)
+#     con puerto  -> https://localhost:<puerto>   (iss = https://localhost:<puerto>/auth/realms/medicita)
+# No fije MEDICITA_HTTPS_PORT=443 de forma explicita: déjelo sin definir (el navegador omite :443).
+name: medicita
+
+x-url-publica: &url-publica ${MEDICITA_PUBLIC_URL:-https://localhost${MEDICITA_HTTPS_PORT:+:${MEDICITA_HTTPS_PORT}}}
+
+x-java-env: &java-env
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -Xss512k -XX:TieredStopAtLevel=1"
+
+x-rabbit-cliente: &rabbit-cliente
+  SPRING_RABBITMQ_ADDRESSES: rabbitmq-1:5672,rabbitmq-2:5672,rabbitmq-3:5672
+  SPRING_RABBITMQ_USERNAME: medicita
+  SPRING_RABBITMQ_PASSWORD: medicita
+
+x-healthcheck-spring: &healthcheck-spring
+  test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health/readiness || exit 1"]
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 60s
+
+x-rabbit: &rabbit
+  image: rabbitmq:4.1.8-management
+  entrypoint: ["/bin/bash", "/opt/medicita/entrypoint.sh"]
+  command: ["rabbitmq-server"]
+  environment: &rabbit-env
+    COOKIE_ERLANG: medicita-cookie-demo-0123456789
+  healthcheck:
+    test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running"]
+    interval: 10s
+    timeout: 10s
+    retries: 12
+    start_period: 40s
+  networks: [medicita]
+
+x-bd-agendamiento: &bd-agendamiento
+  build: infra/bd-agendamiento
+  depends_on:
+    etcd:
+      condition: service_healthy
+  healthcheck:
+    # Patroni: 200 si PostgreSQL esta corriendo (primaria o replica)
+    test: ["CMD-SHELL", "curl -fsS http://localhost:8008/health || exit 1"]
+    interval: 10s
+    timeout: 5s
+    retries: 12
+    start_period: 60s
+  stop_grace_period: 30s
+  networks: [medicita]
+
+x-agendamiento: &agendamiento
+  build: servicios/agendamiento
+  depends_on:
+    bd-agendamiento-1: { condition: service_healthy }
+    bd-agendamiento-2: { condition: service_healthy }
+    cache-cupos:       { condition: service_healthy }
+    rabbitmq-1:        { condition: service_healthy }
+    rabbitmq-2:        { condition: service_healthy }
+    rabbitmq-3:        { condition: service_healthy }
+    keycloak:          { condition: service_healthy }
+  environment: &agendamiento-env
+    <<: [*java-env, *rabbit-cliente]
+    SPRING_DATASOURCE_URL: jdbc:postgresql://bd-agendamiento-1:5432,bd-agendamiento-2:5432/medicita?targetServerType=primary
+    MEDICITA_REPLICA_URL: jdbc:postgresql://bd-agendamiento-1:5432,bd-agendamiento-2:5432/medicita?targetServerType=preferSecondary
+    SPRING_DATASOURCE_USERNAME: medicita
+    SPRING_DATASOURCE_PASSWORD: medicita
+    SPRING_DATA_REDIS_HOST: cache-cupos
+    MEDICITA_JWKS_URI: http://keycloak:8080/auth/realms/medicita/protocol/openid-connect/certs
+  healthcheck: *healthcheck-spring
+  networks: [medicita]
+
+services:
+  # ---------------- Frontends (nginx estatico) ----------------
+  app-paciente:
+    container_name: app-paciente
+    build: apps/paciente
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    networks: [medicita]
+
+  app-portal:
+    container_name: app-portal
+    build: apps/portal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/portal/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    networks: [medicita]
+
+  # ---------------- Identidad ----------------
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:26.8.2
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: ${MEDICITA_PUBLIC_URL:-https://localhost${MEDICITA_HTTPS_PORT:+:${MEDICITA_HTTPS_PORT}}}/auth
+      KC_HTTP_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./infra/keycloak/medicita-realm.json:/opt/keycloak/data/import/medicita-realm.json:ro
+    healthcheck:
+      # La imagen no trae curl: peticion HTTP a mano contra el puerto de gestion (9000)
+      test:
+        - CMD-SHELL
+        - |
+          exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /auth/health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q '"status": "UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+    networks: [medicita]
+
+  # ---------------- API Gateway ----------------
+  gateway:
+    container_name: gateway
+    build: infra/gateway
+    environment:
+      MEDICITA_PUBLIC_URL: *url-publica
+    ports:
+      - "${MEDICITA_HTTPS_PORT:-443}:443"
+      - "80:80"
+    depends_on:
+      app-paciente:    { condition: service_healthy }
+      app-portal:      { condition: service_healthy }
+      keycloak:        { condition: service_healthy }
+      agendamiento-1:  { condition: service_healthy }
+      agendamiento-2:  { condition: service_healthy }
+    networks: [medicita]
+
+  # ---------------- API de Agendamiento (2 instancias, mismo build) ----------------
+  agendamiento-1:
+    <<: *agendamiento
+    container_name: agendamiento-1
+    environment:
+      <<: *agendamiento-env
+      MEDICITA_JWT_ISSUER: ${MEDICITA_PUBLIC_URL:-https://localhost${MEDICITA_HTTPS_PORT:+:${MEDICITA_HTTPS_PORT}}}/auth/realms/medicita
+      MEDICITA_INSTANCIA: agendamiento-1
+
+  agendamiento-2:
+    <<: *agendamiento
+    container_name: agendamiento-2
+    environment:
+      <<: *agendamiento-env
+      MEDICITA_JWT_ISSUER: ${MEDICITA_PUBLIC_URL:-https://localhost${MEDICITA_HTTPS_PORT:+:${MEDICITA_HTTPS_PORT}}}/auth/realms/medicita
+      MEDICITA_INSTANCIA: agendamiento-2
+
+  # ---------------- Cache de cupos ----------------
+  cache-cupos:
+    container_name: cache-cupos
+    image: redis:7.4.12-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [medicita]
+
+  # ---------------- BD de Agendamiento: PostgreSQL 16 + Patroni (DCS etcd) ----------------
+  etcd:
+    container_name: etcd
+    image: quay.io/coreos/etcd:v3.5.35
+    command:
+      - etcd
+      - --name=etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=etcd=http://etcd:2380
+      - --auto-compaction-retention=1
+    volumes:
+      - etcd-data:/etcd-data
+    healthcheck:
+      test: ["CMD", "etcdctl", "--endpoints=http://127.0.0.1:2379", "endpoint", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [medicita]
+
+  bd-agendamiento-1:
+    <<: *bd-agendamiento
+    container_name: bd-agendamiento-1
+    environment:
+      PATRONI_NAME: bd-agendamiento-1
+    volumes:
+      - bd-agendamiento-1-data:/var/lib/postgresql/data
+
+  bd-agendamiento-2:
+    <<: *bd-agendamiento
+    container_name: bd-agendamiento-2
+    environment:
+      PATRONI_NAME: bd-agendamiento-2
+    volumes:
+      - bd-agendamiento-2-data:/var/lib/postgresql/data
+
+  # ---------------- Broker: RabbitMQ 3 nodos (colas quorum) ----------------
+  rabbitmq-1:
+    <<: *rabbit
+    container_name: rabbitmq-1
+    hostname: rabbitmq-1
+    environment:
+      <<: *rabbit-env
+      RABBITMQ_NODENAME: rabbit@rabbitmq-1
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq-1-data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/entrypoint.sh:/opt/medicita/entrypoint.sh:ro
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-medicita.conf:ro
+      - ./infra/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+
+  rabbitmq-2:
+    <<: *rabbit
+    container_name: rabbitmq-2
+    hostname: rabbitmq-2
+    environment:
+      <<: *rabbit-env
+      RABBITMQ_NODENAME: rabbit@rabbitmq-2
+    volumes:
+      - rabbitmq-2-data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/entrypoint.sh:/opt/medicita/entrypoint.sh:ro
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-medicita.conf:ro
+      - ./infra/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+
+  rabbitmq-3:
+    <<: *rabbit
+    container_name: rabbitmq-3
+    hostname: rabbitmq-3
+    environment:
+      <<: *rabbit-env
+      RABBITMQ_NODENAME: rabbit@rabbitmq-3
+    volumes:
+      - rabbitmq-3-data:/var/lib/rabbitmq
+      - ./infra/rabbitmq/entrypoint.sh:/opt/medicita/entrypoint.sh:ro
+      - ./infra/rabbitmq/rabbitmq.conf:/etc/rabbitmq/conf.d/20-medicita.conf:ro
+      - ./infra/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+
+  # ---------------- Servicio de Notificaciones y su BD ----------------
+  notificaciones:
+    container_name: notificaciones
+    build: servicios/notificaciones
+    depends_on:
+      bd-notificaciones: { condition: service_healthy }
+      rabbitmq-1:        { condition: service_healthy }
+      rabbitmq-2:        { condition: service_healthy }
+      rabbitmq-3:        { condition: service_healthy }
+      simuladores:       { condition: service_healthy }
+      correo-smtp:       { condition: service_healthy }
+    environment:
+      <<: [*java-env, *rabbit-cliente]
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bd-notificaciones:5432/notificaciones
+      SPRING_DATASOURCE_USERNAME: notificaciones
+      SPRING_DATASOURCE_PASSWORD: notificaciones
+      MEDICITA_WHATSAPP_URL: http://simuladores:8090/whatsapp
+      MEDICITA_WHATSAPP_PHONE_ID: "100200300"
+      MEDICITA_WHATSAPP_TOKEN: token-demo
+      MEDICITA_SMS_URL: http://simuladores:8090/sms
+      SPRING_MAIL_HOST: correo-smtp
+      SPRING_MAIL_PORT: "1025"
+    healthcheck: *healthcheck-spring
+    networks: [medicita]
+
+  bd-notificaciones:
+    container_name: bd-notificaciones
+    image: postgres:16.16-alpine3.24
+    environment:
+      POSTGRES_DB: notificaciones
+      POSTGRES_USER: notificaciones
+      POSTGRES_PASSWORD: notificaciones
+    volumes:
+      - bd-notificaciones-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notificaciones -d notificaciones"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [medicita]
+
+  # ---------------- Servicio de Integracion Clinica ----------------
+  integracion-clinica:
+    container_name: integracion-clinica
+    build: servicios/integracion-clinica
+    depends_on:
+      rabbitmq-1:  { condition: service_healthy }
+      rabbitmq-2:  { condition: service_healthy }
+      rabbitmq-3:  { condition: service_healthy }
+      simuladores: { condition: service_healthy }
+    environment:
+      <<: [*java-env, *rabbit-cliente]
+      MEDICITA_HCE_FHIR_URL: http://simuladores:8090/fhir
+    healthcheck: *healthcheck-spring
+    networks: [medicita]
+
+  # ---------------- Sistemas externos (simulados) ----------------
+  simuladores:
+    container_name: simuladores
+    build: externos/simuladores
+    environment:
+      <<: *java-env
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8090/control/estado || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks: [medicita]
+
+  correo-smtp:
+    container_name: correo-smtp
+    image: axllent/mailpit:v1.34.0
+    ports:
+      - "${MEDICITA_CORREO_UI_PORT:-8025}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    networks: [medicita]
+
+  # ---------------- Herramientas: escenarios de calidad (perfil opcional) ----------------
+  escenarios:
+    container_name: escenarios
+    profiles: [escenarios]
+    build: escenarios
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      gateway: { condition: service_healthy }
+    networks: [medicita]
+
+networks:
+  medicita:
+    name: medicita
+
+volumes:
+  etcd-data:
+  bd-agendamiento-1-data:
+  bd-agendamiento-2-data:
+  rabbitmq-1-data:
+  rabbitmq-2-data:
+  rabbitmq-3-data:
+  bd-notificaciones-data:

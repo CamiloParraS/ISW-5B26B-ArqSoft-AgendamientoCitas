@@ -1,0 +1,14 @@
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location = /estado {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        return 301 ${MEDICITA_PUBLIC_URL}$request_uri;
+    }
+}
