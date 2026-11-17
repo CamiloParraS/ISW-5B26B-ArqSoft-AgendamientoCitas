@@ -134,6 +134,9 @@ services:
     build: infra/gateway
     environment:
       MEDICITA_PUBLIC_URL: *url-publica
+    volumes:
+      # CA local + certificado TLS persistidos fuera del contenedor (ver confiar-certificado.ps1)
+      - ./infra/gateway/certs:/etc/nginx/certs
     ports:
       - "${MEDICITA_HTTPS_PORT:-443}:443"
       - "80:80"

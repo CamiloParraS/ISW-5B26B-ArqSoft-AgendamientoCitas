@@ -7,3 +7,4 @@ web/dist/
 target/
 apps/*/dist/
 apps/*/node_modules/
+infra/gateway/certs/

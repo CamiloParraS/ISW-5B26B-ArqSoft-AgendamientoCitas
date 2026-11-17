@@ -41,7 +41,13 @@ Todos los contenedores tienen healthcheck y se arrancan en orden (`depends_on: c
 | Panel de simuladores externos (WhatsApp, SMS, HCE) | http://localhost:8090 |
 | RabbitMQ (gestión, `medicita` / `medicita`) | http://localhost:15672 |
 
-El certificado TLS es autofirmado (el gateway lo genera al arrancar): el navegador mostrará una advertencia que se acepta una vez.
+**HTTPS en localhost (una sola vez por equipo).** Al primer arranque el gateway crea una autoridad local en `infra/gateway/certs/` (ignorada por git y conservada entre reinicios) y firma con ella el certificado de `localhost`. Para que Chrome y Edge la acepten sin advertencia, instálela en su usuario de Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra\gateway\confiar-certificado.ps1
+```
+
+Windows pedirá confirmación; acéptela y reinicie el navegador. La autoridad está restringida con *nameConstraints*: sólo es válida para `localhost`, `127.0.0.1` y `::1`, así que no puede usarse para suplantar ningún otro sitio. Para quitarla: el mismo comando con `-Quitar`. (Firefox usa su propio almacén: importe `infra/gateway/certs/medicita-ca.crt` en Ajustes → Certificados, o active `security.enterprise_roots.enabled`.)
 
 ## Usuarios demo
 
@@ -155,7 +161,7 @@ Para ver el test fallar: haga que un módulo importe una clase `interno` de otro
 - **El puerto 443 está ocupado.** Arranque con otro puerto: `MEDICITA_HTTPS_PORT=8443 docker compose up -d --build` (PowerShell: `$env:MEDICITA_HTTPS_PORT=8443; docker compose up -d --build`) y use https://localhost:8443. Los escenarios no se ven afectados (usan la red interna).
 - **El puerto 8025 (Mailpit) está ocupado.** Publique la interfaz de Mailpit en otro puerto: `MEDICITA_CORREO_UI_PORT=8026 docker compose up -d --build` y abra http://localhost:8026.
 - **Se detuvo o recreó una instancia de la API.** No hace falta recargar el gateway: NGINX re-resuelve `agendamiento-1` y `agendamiento-2` con el DNS de Docker (`resolve`) y la instancia vuelve a recibir tráfico en unos 10 s.
-- **Advertencia de certificado.** Es esperado: el certificado es autofirmado y se genera al arrancar el gateway. Acepte la excepción en el navegador.
+- **`NET::ERR_CERT_AUTHORITY_INVALID` / «La conexión no es privada».** Falta confiar en la autoridad local: ejecute `infra\gateway\confiar-certificado.ps1` (ver [URLs](#urls)) y reinicie el navegador. Si borró `infra/gateway/certs/`, el gateway genera una autoridad nueva al arrancar: vuelva a ejecutar el script (reemplaza la anterior).
 - **Algún servicio queda en `starting` o `unhealthy`.** Revise `docker compose ps` y `docker compose logs <servicio>`. Keycloak, Patroni y RabbitMQ (3 nodos) son los más lentos en la primera vez; las dependencias esperan por ellos. Si Docker Desktop tiene menos de 8 GB de RAM, los contenedores pueden reiniciarse por falta de memoria.
 - **Un escenario falla porque «no hay cupos».** Los horarios se publican para los próximos 21 días calendario (cupos sólo de lunes a viernes) en el primer arranque. Si el stack lleva varias semanas arriba o se agotaron los cupos, reinicie los datos (`docker compose down -v`).
 - **Los escenarios dicen que no tienen acceso a Docker.** Ejecútelos con `docker compose run --rm escenarios <nombre>` (el perfil monta `/var/run/docker.sock`).
